@@ -1,3 +1,12 @@
+// ==UserScript==
+// @name        DragToScroll
+// @namespace   blabla
+// @version     1
+// @match      *://*/*
+// @grant       none
+// ==/UserScript==
+
+
 /**
  * @fileoverview dragscroll - scroll area by dragging
  * @version 0.0.8
@@ -5,6 +14,7 @@
  * @license MIT, see http://github.com/asvd/dragscroll
  * @copyright 2015 asvd <heliosframework@gmail.com> 
  */
+
 
 
 (function (root, factory) {
@@ -16,6 +26,13 @@
         factory((root.dragscroll = {}));
     }
 }(this, function (exports) {
+  
+  //forked settings////
+  acceleration = -4; //negative for reverse scroll
+  var anyObject = [document.body]
+  /////////////////////
+  
+  
     var _window = window;
     var _document = document;
     var mousemove = 'mousemove';
@@ -37,7 +54,8 @@
         }
 
         // cloning into array since HTMLCollection is updated dynamically
-        dragged = [].slice.call(_document.getElementsByClassName('dragscroll'));
+//        dragged = [].slice.call(_document.getElementsByClassName('dragscroll'));
+          dragged = [].slice.call(anyObject);
         for (i = 0; i < dragged.length;) {
             (function(el, lastClientX, lastClientY, pushed, scroller, cont){
                 (cont = el.container || el)[addEventListener](
@@ -48,30 +66,43 @@
                                 e.pageX, e.pageY
                             ) == cont
                         ) {
+                          if(e.button === 2){ //!e.shiftKey no good, because the mess with selection...
+                            if(!pushed){
+                                 document.body.oncontextmenu = function() {return true;}
+                            }
                             pushed = 1;
                             lastClientX = e.clientX;
                             lastClientY = e.clientY;
 
-                            e.preventDefault();
+                            e.preventDefault();}
                         }
                     }, 0
                 );
 
                 _window[addEventListener](
-                    mouseup, cont.mu = function() {pushed = 0;}, 0
+                    mouseup, cont.mu = function() {
+                        pushed = 0;
+                                   //  document.body.oncontextmenu = function() {return true;}
+                    }, 0
                 );
 
                 _window[addEventListener](
                     mousemove,
                     cont.mm = function(e) {
                         if (pushed) {
+                            var OldY = newScrollY;
                             (scroller = el.scroller||el).scrollLeft -=
-                                newScrollX = (- lastClientX + (lastClientX=e.clientX));
+                                newScrollX = (- lastClientX + e.clientX)*acceleration;
+                                lastClientX=e.clientX;
                             scroller.scrollTop -=
-                                newScrollY = (- lastClientY + (lastClientY=e.clientY));
+                                newScrollY = (- lastClientY + e.clientY)*acceleration;
+                                lastClientY=e.clientY;
                             if (el == _document.body) {
                                 (scroller = _document.documentElement).scrollLeft -= newScrollX;
                                 scroller.scrollTop -= newScrollY;
+                            }
+                            if(OldY != newScrollY){
+                                document.body.oncontextmenu = function() {return false;}
                             }
                         }
                     }, 0
@@ -89,4 +120,6 @@
 
     exports.reset = reset;
 }));
+
+dragtoscroll
 
